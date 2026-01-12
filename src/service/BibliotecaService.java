@@ -1,78 +1,80 @@
 package service;
 
 import model.Libro;
-import model.Prestamo;
+import model.Reserva;
 import model.Usuario;
-import util.Validador;
-
 import java.util.ArrayList;
 import java.util.List;
 
 public class BibliotecaService {
 
     private List<Reserva> reservas = new ArrayList<>();
+    private List<Libro> catalogo = new ArrayList<>();
 
-    /**
-     * Intenta realizar la reserva de un libro.
-     *
-     * @param usuario Usuario que realiza la reserva
-     * @param libro   Libro a reservar
-     * @return true si la reserva se realiza correctamente, false en caso contrario
-     */
-    public boolean reservarLibro(Usuario usuario, Libro libro) {
+    // Catalogo
+    public void agregarLibro(Libro libro) {
+        catalogo.add(libro);
+    }
 
-        // Validación del usuario
-        if (usuario == null) {
-            System.out.println("Error: el usuario no puede ser nulo.");
-            return false;
-        }
+    public boolean eliminarLibro(String isbn) {
+        return catalogo.removeIf(l -> l.getIsbn().equals(isbn));
+    }
 
-        if (!Validador.validarUsuario(usuario)) {
-            System.out.println("Error: usuario no válido.");
-            return false;
-        }
+    public Libro buscarPorIsbn(String isbn) {
+        return catalogo.stream()
+                .filter(l -> l.getIsbn().equals(isbn))
+                .findFirst()
+                .orElse(null);
+    }
 
-        // Validación del libro
-        if (libro == null) {
-            System.out.println("Error: el libro no puede ser nulo.");
-            return false;
-        }
-
-        if (!libro.isDisponible()) {
-            System.out.println("Error: el libro ya está reservado.");
-            return false;
-        }
-
-        // Comprobación de reservas duplicadas
-        for (Reserva r : reservas) {
-            if (r.getUsuario().equals(usuario) &&
-                r.getLibro().equals(libro)) {
-                System.out.println("Error: el usuario ya tiene este libro reservado.");
-                return false;
+    public List<Libro> buscarPorTitulo(String texto) {
+        List<Libro> resultados = new ArrayList<>();
+        for (Libro l : catalogo) {
+            if (l.getTitulo().toLowerCase().contains(texto.toLowerCase())) {
+                resultados.add(l);
             }
         }
+        return resultados;
+    }
 
-        // Realizar la reserva
-        libro.setDisponible(false);
+    public List<Libro> listarCatalogo() {
+        return catalogo;
+    }
+
+    // Reservas
+    public boolean reservarLibro(Usuario usuario, Libro libro) {
+        if (usuario == null || libro == null || !libro.isDisponible()) return false;
+        libro.incrementarReservas();
         reservas.add(new Reserva(usuario, libro));
-
-        System.out.println("Reserva realizada correctamente.");
         return true;
     }
 
     public void listarReservas() {
         if (reservas.isEmpty()) {
-            System.out.println("No hay reservas registradas.");
+            System.out.println("No hay reservas");
             return;
         }
-
-        System.out.println("Listado de reservas:");
-        for (Reserva r : reservas) {
-            System.out.println("- " + r);
-        }
+        reservas.forEach(System.out::println);
     }
 
-    public static boolean validarUsuario(Usuario usuario) {
-        return usuario != null && usuario.getNombre() != null;
+    // Prestamos
+    public boolean prestarLibro(Usuario usuario, String isbn) {
+        Libro libro = buscarPorIsbn(isbn);
+        if (libro == null || !libro.isDisponible()) return false;
+        libro.setDisponible(false);
+        reservas.add(new Reserva(usuario, libro));
+        return true;
+    }
+
+    public boolean devolverLibro(String isbn) {
+        for (int i = 0; i < reservas.size(); i++) {
+            Reserva r = reservas.get(i);
+            if (r.getLibro().getIsbn().equals(isbn)) {
+                r.getLibro().setDisponible(true);
+                reservas.remove(i);
+                return true;
+            }
+        }
+        return false;
     }
 }
