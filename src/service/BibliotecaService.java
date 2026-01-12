@@ -1,7 +1,7 @@
 package service;
 
 import model.Libro;
-import model.Reserva;
+import model.Prestamo;
 import model.Usuario;
 import util.Validador;
 
@@ -70,5 +70,9 @@ public class BibliotecaService {
         for (Reserva r : reservas) {
             System.out.println("- " + r);
         }
+    }
+
+    public static boolean validarUsuario(Usuario usuario) {
+        return usuario != null && usuario.getNombre() != null;
     }
 }
