@@ -21,10 +21,13 @@ public class BibliotecaService {
     }
 
     public Libro buscarPorIsbn(String isbn) {
-        return catalogo.stream()
-                .filter(l -> l.getIsbn().equals(isbn))
-                .findFirst()
-                .orElse(null);
+       Libro resultados =null;
+        for (Libro libro : catalogo) {
+            if (libro.getIsbn().toLowerCase().equalsIgnoreCase(isbn.toLowerCase())) {
+                resultados=libro;
+            }
+        }
+        return resultados;
     }
 
     public List<Libro> buscarPorTitulo(String texto) {
@@ -59,10 +62,16 @@ public class BibliotecaService {
 
     // Prestamos
     public boolean prestarLibro(Usuario usuario, String isbn) {
-        Libro libro = buscarPorIsbn(isbn);
+       Libro libro = buscarPorIsbn(isbn);
         if (libro == null || !libro.isDisponible()) return false;
         libro.setDisponible(false);
-        reservas.add(new Reserva(usuario, libro));
+        for(Reserva reserva:reservas){
+            if(reserva.getLibro().getIsbn().equalsIgnoreCase(libro.getIsbn())){
+                reservas.remove(reserva);
+                reservas.add(new Reserva(usuario, libro));
+                return true;
+            }
+        }
         return true;
     }
 
